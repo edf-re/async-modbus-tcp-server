@@ -7,5 +7,4 @@ edition = "2021"
 
 [dependencies]
 rmodbus = "0.6.1"
-lazy_static = "*"
-tokio = { version = "0.2.9", features = ["full", "time", "tcp"] }
+tokio = { version = "1.8.4", features = ["full", "time"] }
