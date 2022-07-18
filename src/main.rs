@@ -17,18 +17,48 @@ fn print_modbus_context(
     modbus_context: &Arc<std::sync::Mutex<ModbusContext>>,
     start_addr: u16,
     count: u16,
+    modbus_function: u8,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let mut result: Vec<u16> = vec![];
-    modbus_context
-        .lock()
-        .unwrap()
-        .get_holdings_bulk(start_addr, count, &mut result)?;
-    println!(
-        "16-bit registers from address {} to {}: {:?}",
+    let mut registers: Vec<u16> = vec![];
+    let mut bools: Vec<bool> = vec![];
+    if modbus_function == rmodbus::MODBUS_GET_INPUTS {
+        modbus_context
+            .lock()
+            .unwrap()
+            .get_inputs_bulk(start_addr, count, &mut registers)?;
+    } else if modbus_function == rmodbus::MODBUS_GET_HOLDINGS
+        || modbus_function == rmodbus::MODBUS_SET_HOLDINGS_BULK
+        || modbus_function == rmodbus::MODBUS_SET_HOLDING
+    {
+        modbus_context
+            .lock()
+            .unwrap()
+            .get_holdings_bulk(start_addr, count, &mut registers)?;
+    } else if modbus_function == rmodbus::MODBUS_GET_DISCRETES {
+        modbus_context
+            .lock()
+            .unwrap()
+            .get_discretes_bulk(start_addr, count, &mut bools)?;
+    } else if modbus_function == rmodbus::MODBUS_GET_COILS
+        || modbus_function == rmodbus::MODBUS_SET_COILS_BULK
+        || modbus_function == rmodbus::MODBUS_SET_COIL
+    {
+        modbus_context
+            .lock()
+            .unwrap()
+            .get_coils_bulk(start_addr, count, &mut bools)?;
+    }
+    print!(
+        "Modbus function {}, memory contents from {} to {}: ",
+        modbus_function,
         start_addr,
-        start_addr + count,
-        result
+        start_addr + count - 1,
     );
+    if !registers.is_empty() {
+        println!("{:?}", registers);
+    } else {
+        println!("{:?}", bools);
+    }
     Ok(())
 }
 
@@ -67,7 +97,7 @@ async fn handle_connection(
             }
         }
 
-        print_modbus_context(&modbus_context, 0, 16)?;
+        print_modbus_context(&modbus_context, frame.reg, frame.count, frame.func)?;
 
         // Send response to client if necessary
         if frame.response_required {
