@@ -7,4 +7,4 @@ edition = "2021"
 
 [dependencies]
 rmodbus = "0.6.1"
-tokio = { version = "1.8.4", features = ["full", "time"] }
+tokio = { version = "1.20.3", features = ["full", "time"] }
